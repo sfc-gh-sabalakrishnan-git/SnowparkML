@@ -83,7 +83,7 @@ unique_PURPOSE=loandata_df.select(col("PURPOSE")).distinct()
 unique_PURPOSE.show()
 
 ----------------------
-|"PURPOSE"           |
+|PURPOSE           |
 ----------------------
 |DEBT_CONSOLIDATION  |
 |CREDIT_CARD         |
