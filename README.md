@@ -1,8 +1,8 @@
-Loan Default Prediction Using Snowpark ML & Model Registry
+# Loan Default Prediction Using Snowpark ML & Model Registry
 
 In this post, we explore an advanced implementation of loan default prediction by leveraging Snowpark ML and the efficiency of the XGBoost algorithm within the Snowflake environment. This approach builds upon our previous exploration of deep learning techniques for similar predictions, transitioning from TensorFlow and Keras (https://medium.com/p/78a15b196e65) to a more scalable and robust method suited for handling vast datasets in the data cloud.
 
-Initializing the Snowpark Session
+## Initializing the Snowpark Session
 
 First, we establish a Snowpark session, connecting to Snowflake to utilize its compute clusters and data storage capabilities. This session is crucial for all subsequent operations, including data manipulation, model training, and interaction with the Snowpark Model Registry.
 
@@ -10,7 +10,7 @@ connection_parameters = json.load(open('connection.json'))
 session = Session.builder.configs(connection_parameters).create()
 session.sql_simplifier_enabled = True
 
-Data Preparation
+## Data Preparation
 The robustness of Snowpark allows for efficient data handling and computational operations directly within Snowflake's environment. The dataset we are going to use is from Kaggle. To simplify, we keep the loan data downloaded from Kaggle (https://www.kaggle.com/datasets?search=loan+dataset)  in Snowflake's internal staging. You can also use external staging with S3 or store the data in a Snowflake table.
 
 session.sql("LS @Loan_Data;").show()
@@ -50,7 +50,7 @@ list(loandata_df.schema)
  StructField('NOT_FULLY_PAID', DoubleType(), nullable=True)]
 
 
-Column Descriptions
+### Column Descriptions
 
 1.	credit_policy: Indicates whether the borrower meets the credit underwriting criteria of LendingClub. This might be a binary indicator (e.g., 1 for meeting criteria, 0 otherwise).
 2.	purpose: Describes the purpose of the loan as reported by the borrower. Common purposes include debt consolidation, credit card refinancing, home improvement, major purchase, small business investment, educational expenses, etc.
@@ -68,7 +68,7 @@ Column Descriptions
 14.	not_fully_paid: This column indicates whether the loan was not fully repaid. It's likely a binary indicator, where 1 might mean the loan is not fully paid off, and 0 means it is.
 
 
-Ordinal Encoding
+## Ordinal Encoding
 
 Ordinal encoding is applied to the "PURPOSE" column for several reasons, with the choice of this particular column being strategic based on the data's nature and the requirements of subsequent analysis or machine learning models.
 
@@ -93,7 +93,7 @@ unique_PURPOSE.show()
 |MAJOR_PURCHASE      |
 |EDUCATIONAL         |
 
-Why Choose the "PURPOSE" Column?
+### Why Choose the "PURPOSE" Column?
 1.	Categorical with Multiple Levels: The "PURPOSE" column is a prime candidate for encoding because it contains categorical data with multiple distinct levels. Encoding transforms these textual descriptors into a machine-readable format.
 2.	Relevance to Analysis/Modeling Goals: The purpose of a loan is likely to have a significant impact on the outcome of interest, such as loan default risk. By encoding this column, we ensure that this potentially predictive information is included in the model in a usable form.
 3.	Varied Categories: The "PURPOSE" column contains a variety of reasons for which the loans were taken, such as debt consolidation, credit card payments, home improvement, etc. Each of these reasons can influence the loan's risk profile differently. Encoding these categories allows the model to potentially discern patterns related to each loan purpose.
@@ -116,7 +116,7 @@ df_clean = ord_encoded_loandata_df.rename(col("PURPOSE_OE"), "PURPOSE")
 In summary, ordinal encoding for the "PURPOSE" column is a strategic choice to transform categorical data into a numerical format that is suitable for machine learning models, making the data analysis-ready while potentially capturing the predictive power of the loan purpose in relation to the outcome of interest.
 
 
-Handling Class Imbalance by Over-sampling
+## Handling Class Imbalance by Over-sampling
 
 Class imbalance can lead to models that are overly biased towards the majority class, under-performing in accurately predicting the minority class instances due to the lack of sufficient data to learn from. This can be particularly problematic in applications like loan default prediction, where failing to identify potential defaults (the minority class) could have significant financial implications.
 
@@ -124,13 +124,6 @@ count_df = df_clean.group_by("NOT_FULLY_PAID").agg(count("*").alias("count"))
 total_count = df_clean.count()
 proportion_df = count_df.with_column("proportion", count_df["count"] / lit(total_count))
 proportion_df.show()
-
----------------------------------------------
-|"NOT_FULLY_PAID"  |"COUNT"  |"PROPORTION"  |
----------------------------------------------
-|0.0               |8045     |0.839946      |
-|1.0               |1533     |0.160054      |
----------------------------------------------
 
 NOT_FULLY_PAID is  the Label column
 
@@ -142,7 +135,7 @@ Other Methods to Handle Class Imbalance:
 4.	Ensemble Methods: Using ensemble learning techniques, such as boosting or bagging, with a focus on balancing class distribution within each ensemble's subset of data.
 
 
-Hyperparameter tuning and Building the Model
+## Hyperparameter tuning and Building the Model
 
 Hyperparameter optimization is crucial to enhance the performance of models. The process involves tuning parameters like max_depth, learning_rate, and n_estimators to find the optimal settings for our model. The default parameters of a model might not be ideal for all types of data or problems. By tuning hyperparameters, we can significantly improve a model's accuracy, efficiency, and generalization ability to unseen data, ensuring the model is well-suited for its specific application.
 
@@ -176,7 +169,7 @@ grid_search=GridSearchCV(
     output_cols="PREDICTION",
 )
 
-Grid Search:
+### Grid Search:
 Grid search is a brute-force method for hyperparameter optimization. It systematically creates and evaluates models for each combination of the parameter grid specified. This approach ensures that every possible combination is tested but can be computationally expensive, especially with large datasets and many parameters.
 
 grid_search.fit(train_df)
@@ -191,7 +184,7 @@ Gradient-based Optimization: Applies gradient descent or similar methods to opti
 
 Evolutionary Algorithms: Mimic the process of natural selection to iteratively select, mutate, and combine parameters to find optimal solutions over generations.
 
-Evaluating Model Performance: Accuracy and Confusion Matrix Analysis
+## Evaluating Model Performance: Accuracy and Confusion Matrix Analysis
 
 We evaluate the model's performance through accuracy and confusion matrix analysis, ensuring the model is effective in making accurate predictions. Use the best model found by grid search to make predictions on the test dataset and store the results in `predictions_df`.
 
