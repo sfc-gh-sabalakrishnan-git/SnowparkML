@@ -16,7 +16,7 @@ The robustness of Snowpark allows for efficient data handling and computational 
 session.sql("LS @Loan_Data;").show()
 
  
-
+```
 #Create a Snowpark DataFrame that is configured to load data from the CSV file
 #We can now infer schema from CSV files.
 loandata_df = session.read.options({"field_delimiter": ",",
@@ -24,7 +24,7 @@ loandata_df = session.read.options({"field_delimiter": ",",
                                     "infer_schema": True,
                                     "parse_header": True}).csv("@Loan_Data")
 loandata_df.columns
-
+```
 In this dataset, except for the “PURPOSE” column, all are numeric, which simplifies our task. Moreover, all numeric columns are in a range that does not require further manipulation, except converting them to Double type for Snowflake supported types.
 
 
@@ -33,7 +33,7 @@ for colname in ["CREDIT_POLICY", "INT_RATE", "INSTALLMENT", "LOG_ANNUAL_INC", "D
     loandata_df = loandata_df.with_column(colname, loandata_df[colname].cast(DoubleType()))
 list(loandata_df.schema)
 
-
+```
 [StructField('PURPOSE', StringType(16777216), nullable=True),
  StructField('CREDIT_POLICY', DoubleType(), nullable=True),
  StructField('INT_RATE', DoubleType(), nullable=True),
@@ -49,7 +49,7 @@ list(loandata_df.schema)
  StructField('PUB_REC', DoubleType(), nullable=True),
  StructField('NOT_FULLY_PAID', DoubleType(), nullable=True)]
 
-
+```
 ### Column Descriptions
 
 1.	credit_policy: Indicates whether the borrower meets the credit underwriting criteria of LendingClub. This might be a binary indicator (e.g., 1 for meeting criteria, 0 otherwise).
@@ -77,11 +77,12 @@ Why Ordinal Encoding?
 2.	Preserving Order (When Applicable): Although the "PURPOSE" categories might not have a natural order that is universally agreed upon, in some analytical contexts, there could be an implied or practical order. For example, one might argue that "EDUCATIONAL" loans have different risk profiles compared to "SMALL_BUSINESS" loans. Ordinal encoding allows for the possibility of assigning an order if it is deemed analytically meaningful, even though, in this specific instance, the order is based on the array's sequence rather than an inherent property of the data.
 3.	Efficiency: Ordinal encoding is more space-efficient compared to one-hot encoding, as it creates a single new column rather than multiple columns for each category. This can be particularly beneficial when dealing with datasets with a large number of categories or when operating under storage or computational constraints.
 
-
+```
 from snowflake.snowpark.functions import col
 unique_PURPOSE=loandata_df.select(col("PURPOSE")).distinct()
 unique_PURPOSE.show()
-
+```
+```
 ----------------------
 |PURPOSE           |
 ----------------------
@@ -92,6 +93,7 @@ unique_PURPOSE.show()
 |SMALL_BUSINESS      |
 |MAJOR_PURCHASE      |
 |EDUCATIONAL         |
+```
 
 ### Why Choose the "PURPOSE" Column?
 1.	Categorical with Multiple Levels: The "PURPOSE" column is a prime candidate for encoding because it contains categorical data with multiple distinct levels. Encoding transforms these textual descriptors into a machine-readable format.
@@ -139,7 +141,7 @@ Other Methods to Handle Class Imbalance:
 
 Hyperparameter optimization is crucial to enhance the performance of models. The process involves tuning parameters like max_depth, learning_rate, and n_estimators to find the optimal settings for our model. The default parameters of a model might not be ideal for all types of data or problems. By tuning hyperparameters, we can significantly improve a model's accuracy, efficiency, and generalization ability to unseen data, ensuring the model is well-suited for its specific application.
 
-
+```
 
 model = XGBClassifier()
 train_df, test_df = df_final.random_split(weights=[0.9, 0.1], seed=0)
@@ -149,7 +151,7 @@ param_grid = {
     'learning_rate': [0.01, 0.1, 0.2],
     'n_estimators': [100, 200, 300]
 }
-
+```
 Parameters explanation: 
 
 max_depth: Determines the maximum depth of the trees. Deeper trees can model more complex patterns but might lead to overfitting. Values explored are 3, 4, and 5, aiming to find a balance between model complexity and generalization.
@@ -157,7 +159,7 @@ max_depth: Determines the maximum depth of the trees. Deeper trees can model mor
 learning_rate: Controls the step size at each iteration while moving toward a minimum of a loss function. A lower rate requires more iterations but can achieve a more accurate model. Tested rates are 0.01, 0.1, and 0.2, to evaluate the trade-off between convergence speed and model performance.
 
 n_estimators: Specifies the number of trees in the ensemble. More trees can lead to better performance but also increase computation time. The grid search tests 100, 200, and 300 trees to find an optimal number for the ensemble size.
-
+```
 
 grid_search=GridSearchCV(
     estimator=XGBClassifier(),
@@ -168,7 +170,7 @@ grid_search=GridSearchCV(
     label_cols="NOT_FULLY_PAID",
     output_cols="PREDICTION",
 )
-
+```
 ### Grid Search:
 Grid search is a brute-force method for hyperparameter optimization. It systematically creates and evaluates models for each combination of the parameter grid specified. This approach ensures that every possible combination is tested but can be computationally expensive, especially with large datasets and many parameters.
 
@@ -187,7 +189,7 @@ Evolutionary Algorithms: Mimic the process of natural selection to iteratively s
 ## Evaluating Model Performance: Accuracy and Confusion Matrix Analysis
 
 We evaluate the model's performance through accuracy and confusion matrix analysis, ensuring the model is effective in making accurate predictions. Use the best model found by grid search to make predictions on the test dataset and store the results in `predictions_df`.
-
+```
 predictions_df = grid_search.predict(test_df)
 
 predictions_df.select("NOT_FULLY_PAID", "PREDICTION").show()
@@ -201,26 +203,26 @@ traning_accuracy_score=accuracy_score(
 traning_accuracy_score
 
 0.901609
-
+```
 Prediction accuracy score of 0.907797 indicates that the model accurately predicted the correct outcome for approximately 90.78% of the cases in the test dataset. This high accuracy score suggests that the model is highly effective in making predictions for this particular task.
 
 
-
+```
 traning_confusion_matrix=confusion_matrix(
     df=predictions_df,
     y_true_col_name=LABEL_COLS[0],
     y_pred_col_name=OUTPUT_COLS[0]
 )
 traning_confusion_matrix
-
+```
 The confusion matrix output represents the performance of the classification model:
-
+```
 Top-left (694): True Negatives (TN) - The number of instances correctly predicted as negative (not fully paid).
 Top-right (107): False Positives (FP) - The number of instances incorrectly predicted as positive (fully paid) when they are actually negative.
 Bottom-left (42): False Negatives (FN) - The number of instances incorrectly predicted as negative when they are actually positive.
 Bottom-right (773): True Positives (TP) - The number of instances correctly predicted as positive.
 This matrix helps in understanding the model's ability to correctly or incorrectly classify instances into 'fully paid' or 'not fully paid' categories
-
+```
 Model Management and Deployment with Model Registry
 
 with Snowpark ML's model registry, we have a Snowflake native model versioning and deployment framework. This allows us to log models, tag parameters and metrics, track metadata, create versions, and ultimately execute batch inference tasks in a Snowflake warehouse or deploy to a Snowpark Container Service.
@@ -228,7 +230,7 @@ with Snowpark ML's model registry, we have a Snowflake native model versioning a
 Lets Log the model to the Snowflake ML Registry with specified details, including model name, version, requirements, and comments.
 Additionally, include model performance metrics (accuracy score and confusion matrix) and a sample of input data for reference or later use.
 
-
+```
 reg=Registry(session=session,  database_name=session.get_current_database(),schema_name=session.get_current_schema())
 
 mv=reg.log_model(
@@ -243,14 +245,14 @@ mv=reg.log_model(
     },
     sample_input_data=train_df
 )
-
+```
 Use the logged model for predicting loan default, demonstrating the practical application of registered models in making accurate predictions on new data.
-
+```
 rf_mv1=model_list[2].version('V3')
 pred_df1=rf_mv1.run(test_df,function_name='predict')
 pred_df1['NOT_FULLY_PAID','PREDICTION'].show()
-
-Conclusion
+```
+## Conclusion
 This process effectively showcases the use of Snowflake's Snowpark ML model registry for managing and deploying machine learning models. By logging the model with detailed metadata and performance metrics, we ensure transparency and ease of model management. Deploying a specific version of the model for prediction exemplifies the registry's capability to streamline model lifecycle management, facilitating a robust and scalable framework for operationalizing machine learning models.
 
 
