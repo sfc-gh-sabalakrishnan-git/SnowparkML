@@ -17,8 +17,8 @@ session.sql("LS @Loan_Data;").show()
 
  
 
-# Create a Snowpark DataFrame that is configured to load data from the CSV file
-# We can now infer schema from CSV files.
+#Create a Snowpark DataFrame that is configured to load data from the CSV file
+#We can now infer schema from CSV files.
 loandata_df = session.read.options({"field_delimiter": ",",
                                     "field_optionally_enclosed_by": '"',
                                     "infer_schema": True,
@@ -28,7 +28,7 @@ loandata_df.columns
 In this dataset, except for the “PURPOSE” column, all are numeric, which simplifies our task. Moreover, all numeric columns are in a range that does not require further manipulation, except converting them to Double type for Snowflake supported types.
 
 
-# Loop through a list of column names and cast each column to DoubleType in the 'loandata_df' DataFrame.
+#Loop through a list of column names and cast each column to DoubleType in the 'loandata_df' DataFrame.
 for colname in ["CREDIT_POLICY", "INT_RATE", "INSTALLMENT", "LOG_ANNUAL_INC", "DTI", "FICO","DAYS_WITH_CR_LINE","REVOL_BAL","REVOL_UTIL","INQ_LAST_6MTHS","DELINQ_2YRS","PUB_REC","NOT_FULLY_PAID"]:
     loandata_df = loandata_df.with_column(colname, loandata_df[colname].cast(DoubleType()))
 list(loandata_df.schema)
@@ -101,15 +101,15 @@ Why Choose the "PURPOSE" Column?
 
 categories = {"PURPOSE": np.array(["DEBT_CONSOLIDATION", "CREDIT_CARD", "ALL_OTHER", "HOME_IMPROVEMENT", "SMALL_BUSINESS","MAJOR_PURCHASE","EDUCATIONAL"]) }
 
-# Initialize an OrdinalEncoder to encode the 'PURPOSE' column according to the specified categories.
+#Initialize an OrdinalEncoder to encode the 'PURPOSE' column according to the specified categories.
 snowml_oe = snowml.OrdinalEncoder(input_cols=["PURPOSE"], output_cols=["PURPOSE_OE"], categories=categories)
 
-# Fit the OrdinalEncoder to the loandata_df and transform it, encoding the 'PURPOSE' column.
+#Fit the OrdinalEncoder to the loandata_df and transform it, encoding the 'PURPOSE' column.
 ord_encoded_loandata_df = snowml_oe.fit(loandata_df).transform(loandata_df)
 
 
-# Drop the original 'PURPOSE' column from the DataFrame after encoding.
-# Rename the encoded column 'PURPOSE_OE' back to 'PURPOSE' for clarity in the final DataFrame.
+#Drop the original 'PURPOSE' column from the DataFrame after encoding.
+#Rename the encoded column 'PURPOSE_OE' back to 'PURPOSE' for clarity in the final DataFrame.
 ord_encoded_loandata_df=ord_encoded_loandata_df.drop("PURPOSE")
 df_clean = ord_encoded_loandata_df.rename(col("PURPOSE_OE"), "PURPOSE")
 
