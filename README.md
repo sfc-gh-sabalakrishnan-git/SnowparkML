@@ -256,8 +256,3 @@ This process effectively showcases the use of Snowflake's Snowpark ML model regi
 
 
 
-
-
-
-
-![image](https://github.com/sarathi-tech/SnowparkML/assets/47050436/1926eef7-ef06-4f0b-8e72-fafe2cedefc4)
