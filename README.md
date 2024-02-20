@@ -27,12 +27,12 @@ loandata_df.columns
 ```
 In this dataset, except for the “PURPOSE” column, all are numeric, which simplifies our task. Moreover, all numeric columns are in a range that does not require further manipulation, except converting them to Double type for Snowflake supported types.
 
-
+```
 #Loop through a list of column names and cast each column to DoubleType in the 'loandata_df' DataFrame.
 for colname in ["CREDIT_POLICY", "INT_RATE", "INSTALLMENT", "LOG_ANNUAL_INC", "DTI", "FICO","DAYS_WITH_CR_LINE","REVOL_BAL","REVOL_UTIL","INQ_LAST_6MTHS","DELINQ_2YRS","PUB_REC","NOT_FULLY_PAID"]:
     loandata_df = loandata_df.with_column(colname, loandata_df[colname].cast(DoubleType()))
 list(loandata_df.schema)
-
+```
 ```
 [StructField('PURPOSE', StringType(16777216), nullable=True),
  StructField('CREDIT_POLICY', DoubleType(), nullable=True),
