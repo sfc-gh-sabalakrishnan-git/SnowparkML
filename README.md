@@ -18,7 +18,7 @@ session.sql("LS @Loan_Data;").show()
  
 ```
 #Create a Snowpark DataFrame that is configured to load data from the CSV file
-#We can now infer schema from CSV files.
+#We can now infer schema from CSV files. 
 loandata_df = session.read.options({"field_delimiter": ",",
                                     "field_optionally_enclosed_by": '"',
                                     "infer_schema": True,
